@@ -104,3 +104,10 @@ test('verify wordlists from https://github.com/bitcoin/bips/blob/master/bip-0039
     t.end()
   })
 })
+
+test('generate custom mnemonic', function (t) {
+  var seed = ['apple apple apple apple apple apple apple apple apple apple apple']
+  var words = bip39.genCustomMnemonic(seed[0]).split(' ')
+  t.plan(1)
+  t.deepEqual(words.slice(0, words.length - 1), seed[0].split(' '))
+})

@@ -130,6 +130,46 @@ function validateMnemonic (mnemonic, wordlist) {
   return true
 }
 
+function getRandomInt (max) {
+  return Math.floor(Math.random() * Math.floor(max))
+}
+
+function genCustomMnemonic (mnemonic, wordlist) {
+  wordlist = wordlist || DEFAULT_WORDLIST
+
+  var lastWord = wordlist[getRandomInt(wordlist.length)]
+  var newMnemonic = mnemonic + ' ' + lastWord
+  var words = unorm.nfkd(newMnemonic).split(' ')
+  if (words.length % 3 !== 0) throw new Error(INVALID_MNEMONIC)
+
+  // convert word indices to 11 bit binary strings
+  var bits = words.map(function (word) {
+    var index = wordlist.indexOf(word)
+    if (index === -1) throw new Error(INVALID_MNEMONIC)
+
+    return lpad(index.toString(2), '0', 11)
+  }).join('')
+
+  // split the binary string into ENT/CS
+  var dividerIndex = Math.floor(bits.length / 33) * 32
+  var entropyBits = bits.slice(0, dividerIndex)
+
+  // calculate the checksum and compare
+  var entropyBytes = entropyBits.match(/(.{1,8})/g).map(binaryToByte)
+  if (entropyBytes.length < 16) throw new Error(INVALID_ENTROPY)
+  if (entropyBytes.length > 32) throw new Error(INVALID_ENTROPY)
+  if (entropyBytes.length % 4 !== 0) throw new Error(INVALID_ENTROPY)
+
+  var entropy = Buffer.from(entropyBytes)
+  var newChecksum = deriveChecksumBits(entropy)
+  var newBits = (entropyBits + newChecksum).match(/.{1,11}/g)
+  var result = newBits.map(function (bit) {
+    var idx = parseInt(bit, 2)
+    return wordlist[idx]
+  }).join(' ')
+  return result
+}
+
 module.exports = {
   mnemonicToSeed: mnemonicToSeed,
   mnemonicToSeedHex: mnemonicToSeedHex,
@@ -137,6 +177,7 @@ module.exports = {
   entropyToMnemonic: entropyToMnemonic,
   generateMnemonic: generateMnemonic,
   validateMnemonic: validateMnemonic,
+  genCustomMnemonic: genCustomMnemonic,
   wordlists: {
     EN: ENGLISH_WORDLIST,
     JA: JAPANESE_WORDLIST,
