@@ -130,16 +130,9 @@ function validateMnemonic (mnemonic, wordlist) {
   return true
 }
 
-function getRandomInt (max) {
-  return Math.floor(Math.random() * Math.floor(max))
-}
-
 function genCustomMnemonic (mnemonic, wordlist) {
   wordlist = wordlist || DEFAULT_WORDLIST
-
-  var lastWord = wordlist[getRandomInt(wordlist.length)]
-  var newMnemonic = mnemonic + ' ' + lastWord
-  var words = unorm.nfkd(newMnemonic).split(' ')
+  var words = unorm.nfkd(mnemonic).split(' ')
   if (words.length % 3 !== 0) throw new Error(INVALID_MNEMONIC)
 
   // convert word indices to 11 bit binary strings
